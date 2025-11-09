@@ -1,4 +1,5 @@
 import{cart} from '../backend/cart.js';
+import{products} from '../backend/products.js';
 
 let productsHTML='';
 products.forEach((product)=>{  
@@ -54,7 +55,7 @@ products.forEach((product)=>{
     
           
 });
-console.log(productsHTML);
+
 document.querySelector('.js-grid').innerHTML=productsHTML;
 document.querySelectorAll('.js-add-to-cart')
 .forEach((button)=>{
