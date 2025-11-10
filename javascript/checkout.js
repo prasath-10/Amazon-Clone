@@ -1,66 +1,73 @@
 import { cart, removefromcart, updatedelivaryoption } from '../backend/cart.js';
 import { products } from '../backend/products.js';
 import dayjs from 'https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js';
-import { delivaryoption as deliveryOptions } from '../javascript/delivaryoption.js'; // keep name consistent
+import { delivaryoption as deliveryOptions } from '../javascript/delivaryoption.js'; // renamed for clarity
 
 function formatcurrency(priceCents) {
   return `$${(priceCents / 100).toFixed(2)}`;
 }
 
-let summaryhtml = '';
+// ✅ Render the whole order summary
+function renderordersummary() {
+  let summaryhtml = '';
 
-cart.forEach((cartItem) => {
-  const productId = cartItem.productId;
-  const matchingproduct = products.find((product) => product.id === productId);
+  cart.forEach((cartItem) => {
+    const productId = cartItem.productId;
+    const matchingproduct = products.find((product) => product.id === productId);
 
-  const deliveryOptionId = cartItem.delivaryoptionid;
-  let selectedDeliveryOption;
+    const deliveryOptionId = cartItem.delivaryoptionid;
+    const selectedDeliveryOption = deliveryOptions.find(
+      (option) => option.id === deliveryOptionId
+    );
 
-  // ✅ Find the matching delivery option
-  deliveryOptions.forEach((option) => {
-    if (option.id === deliveryOptionId) {
-      selectedDeliveryOption = option;
-    }
-  });
+    // ✅ Calculate delivery date
+    const today = dayjs();
+    const deliverydate = today.add(selectedDeliveryOption.delivarydate, 'days');
+    const datestring = deliverydate.format('dddd, MMMM D');
 
-  // ✅ Calculate delivery date
-  const today = dayjs();
-  const deliverydate = today.add(selectedDeliveryOption.delivarydate, 'days');
-  const datestring = deliverydate.format('dddd, MMMM D');
+    summaryhtml += `
+      <div class="cart-item-container js-cart-container-${matchingproduct.id}">
+        <div class="delivery-date">
+          Delivery date: ${datestring}
+        </div>
 
-  summaryhtml += `
-    <div class="cart-item-container js-cart-container-${matchingproduct.id}">
-      <div class="delivery-date">
-        Delivery date: ${datestring}
-      </div>
+        <div class="cart-item-details-grid">
+          <img class="product-image" src="${matchingproduct.image}">
 
-      <div class="cart-item-details-grid">
-        <img class="product-image" src="${matchingproduct.image}">
+          <div class="cart-item-details">
+            <div class="product-name">${matchingproduct.name}</div>
+            <div class="product-price">
+              $${(matchingproduct.priceCents / 100).toFixed(2)}
+            </div>
+            <div class="product-quantity">
+              <span>
+                Quantity: <span class="quantity-label">${cartItem.quantity}</span>
+              </span>
+              <span class="update-quantity-link link-primary">Update</span>
+              <span class="delete-quantity-link link-primary js-delete-link" 
+                    data-product-id="${matchingproduct.id}">
+                Delete
+              </span>
+            </div>
+          </div>
 
-        <div class="cart-item-details">
-          <div class="product-name">${matchingproduct.name}</div>
-          <div class="product-price">$${(matchingproduct.priceCents / 100).toFixed(2)}</div>
-          <div class="product-quantity">
-            <span>
-              Quantity: <span class="quantity-label">${cartItem.quantity}</span>
-            </span>
-            <span class="update-quantity-link link-primary">Update</span>
-            <span class="delete-quantity-link link-primary js-delete-link" data-product-id="${matchingproduct.id}">
-              Delete
-            </span>
+          <div class="delivery-options">
+            <div class="delivery-options-title">Choose a delivery option:</div>
+            ${deliveryoptionhtml(matchingproduct, cartItem)}
           </div>
         </div>
-
-        <div class="delivery-options">
-          <div class="delivery-options-title">Choose a delivery option:</div>
-          ${deliveryoptionhtml(matchingproduct, cartItem)}
-        </div>
       </div>
-    </div>
-  `;
-});
+    `;
+  });
 
-// ✅ Generate delivery options HTML
+  // ✅ Update DOM with generated HTML
+  document.querySelector('.js-summary').innerHTML = summaryhtml;
+
+  // ✅ Attach event listeners after rendering
+  addEventListeners();
+}
+
+// ✅ Delivery Options HTML generator
 function deliveryoptionhtml(matchingproduct, cartItem) {
   let html = '';
   deliveryOptions.forEach((option) => {
@@ -95,23 +102,26 @@ function deliveryoptionhtml(matchingproduct, cartItem) {
   return html;
 }
 
-document.querySelector('.js-summary').innerHTML = summaryhtml;
-
-// ✅ Delete button functionality
-document.querySelectorAll('.js-delete-link').forEach((link) => {
-  link.addEventListener('click', () => {
-    const id = link.dataset.productId;
-    removefromcart(id);
-
-    const container = document.querySelector(`.js-cart-container-${id}`);
-    container.remove();
+// ✅ Handle delete + delivery option changes
+function addEventListeners() {
+  // Delete item
+  document.querySelectorAll('.js-delete-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      const id = link.dataset.productId;
+      removefromcart(id);
+      renderordersummary(); // re-render after deletion
+    });
   });
-});
 
-// ✅ Update delivery option on click
-document.querySelectorAll('.js-delivery-option').forEach((element) => {
-  element.addEventListener('click', () => {
-    const { productId, deliveryOptionId } = element.dataset;
-    updatedelivaryoption(productId, deliveryOptionId);
+  // Change delivery option
+  document.querySelectorAll('.js-delivery-option').forEach((element) => {
+    element.addEventListener('click', () => {
+      const { productId, deliveryOptionId } = element.dataset;
+      updatedelivaryoption(productId, deliveryOptionId);
+      renderordersummary(); // re-render after changing delivery option
+    });
   });
-});
+}
+
+// ✅ Initial render
+renderordersummary();
