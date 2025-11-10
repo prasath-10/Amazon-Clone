@@ -1,7 +1,7 @@
-import { cart, removefromcart } from '../backend/cart.js';
+import { cart, removefromcart, updatedelivaryoption } from '../backend/cart.js';
 import { products } from '../backend/products.js';
 import dayjs from 'https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js';
-import { delivaryoption as deliveryOptions } from '../javascript/delivaryoption.js';  // renamed for clarity
+import { delivaryoption as deliveryOptions } from '../javascript/delivaryoption.js'; // keep name consistent
 
 function formatcurrency(priceCents) {
   return `$${(priceCents / 100).toFixed(2)}`;
@@ -13,17 +13,17 @@ cart.forEach((cartItem) => {
   const productId = cartItem.productId;
   const matchingproduct = products.find((product) => product.id === productId);
 
-  const deliveryoptionid = cartItem.delivaryoptionid;
+  const deliveryOptionId = cartItem.delivaryoptionid;
   let selectedDeliveryOption;
 
-  // ✅ loop through delivery options correctly
+  // ✅ Find the matching delivery option
   deliveryOptions.forEach((option) => {
-    if (option.id === deliveryoptionid) {
+    if (option.id === deliveryOptionId) {
       selectedDeliveryOption = option;
     }
   });
 
-  // ✅ calculate and format delivery date
+  // ✅ Calculate delivery date
   const today = dayjs();
   const deliverydate = today.add(selectedDeliveryOption.delivarydate, 'days');
   const datestring = deliverydate.format('dddd, MMMM D');
@@ -38,12 +38,8 @@ cart.forEach((cartItem) => {
         <img class="product-image" src="${matchingproduct.image}">
 
         <div class="cart-item-details">
-          <div class="product-name">
-            ${matchingproduct.name}
-          </div>
-          <div class="product-price">
-            $${(matchingproduct.priceCents / 100).toFixed(2)}
-          </div>
+          <div class="product-name">${matchingproduct.name}</div>
+          <div class="product-price">$${(matchingproduct.priceCents / 100).toFixed(2)}</div>
           <div class="product-quantity">
             <span>
               Quantity: <span class="quantity-label">${cartItem.quantity}</span>
@@ -56,9 +52,7 @@ cart.forEach((cartItem) => {
         </div>
 
         <div class="delivery-options">
-          <div class="delivery-options-title">
-            Choose a delivery option:
-          </div>
+          <div class="delivery-options-title">Choose a delivery option:</div>
           ${deliveryoptionhtml(matchingproduct, cartItem)}
         </div>
       </div>
@@ -66,7 +60,7 @@ cart.forEach((cartItem) => {
   `;
 });
 
-// ✅ Delivery Option HTML Generator
+// ✅ Generate delivery options HTML
 function deliveryoptionhtml(matchingproduct, cartItem) {
   let html = '';
   deliveryOptions.forEach((option) => {
@@ -80,11 +74,17 @@ function deliveryoptionhtml(matchingproduct, cartItem) {
     const ischecked = option.id === cartItem.delivaryoptionid;
 
     html += `
-      <div class="delivery-option">
-        <input type="radio"
+      <div 
+        class="delivery-option js-delivery-option" 
+        data-product-id="${matchingproduct.id}" 
+        data-delivery-option-id="${option.id}">
+        
+        <input 
+          type="radio"
           ${ischecked ? 'checked' : ''}
           class="delivery-option-input"
           name="delivery-option-${matchingproduct.id}">
+          
         <div>
           <div class="delivery-option-date">${datestring}</div>
           <div class="delivery-option-price">${pricestring} Shipping</div>
@@ -97,7 +97,7 @@ function deliveryoptionhtml(matchingproduct, cartItem) {
 
 document.querySelector('.js-summary').innerHTML = summaryhtml;
 
-// ✅ Delete event listener
+// ✅ Delete button functionality
 document.querySelectorAll('.js-delete-link').forEach((link) => {
   link.addEventListener('click', () => {
     const id = link.dataset.productId;
@@ -105,5 +105,13 @@ document.querySelectorAll('.js-delete-link').forEach((link) => {
 
     const container = document.querySelector(`.js-cart-container-${id}`);
     container.remove();
+  });
+});
+
+// ✅ Update delivery option on click
+document.querySelectorAll('.js-delivery-option').forEach((element) => {
+  element.addEventListener('click', () => {
+    const { productId, deliveryOptionId } = element.dataset;
+    updatedelivaryoption(productId, deliveryOptionId);
   });
 });
