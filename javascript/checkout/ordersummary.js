@@ -1,8 +1,7 @@
-// ✅ Correct imports (because this file is inside "javascript/checkout/")
 import { cart, removefromcart, updatedelivaryoption } from '../../backend/cart.js';
-import { products } from '../../backend/products.js';
+import { products, getproduct } from '../../backend/products.js';
 import dayjs from 'https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js';
-import { delivaryoption as deliveryOptions } from '../delivaryoption.js'; // correct relative path
+import { delivaryoption as deliveryOptions, getdeliveryoption } from '../delivaryoption.js';
 
 // ✅ Helper function
 function formatcurrency(priceCents) {
@@ -15,16 +14,15 @@ export function renderordersummary() {
 
   cart.forEach((cartItem) => {
     const productId = cartItem.productId;
-    const matchingproduct = products.find((product) => product.id === productId);
+    const matchingproduct = getproduct(productId);
 
+    // ✅ Find the delivery option manually (no .find)
     const deliveryOptionId = cartItem.delivaryoptionid;
-    const selectedDeliveryOption = deliveryOptions.find(
-      (option) => option.id === deliveryOptionId
-    );
+    const deliveryoption = getdeliveryoption(deliveryOptionId);
 
     // ✅ Calculate delivery date using dayjs
     const today = dayjs();
-    const deliverydate = today.add(selectedDeliveryOption.delivarydate, 'days');
+    const deliverydate = today.add(deliveryoption.delivarydate, 'days');
     const datestring = deliverydate.format('dddd, MMMM D');
 
     summaryhtml += `
