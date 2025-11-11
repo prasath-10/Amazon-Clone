@@ -2,6 +2,7 @@ import { cart, removefromcart, updatedelivaryoption } from '../../backend/cart.j
 import { products, getproduct } from '../../backend/products.js';
 import dayjs from 'https://unpkg.com/supersimpledev@8.5.0/dayjs/esm/index.js';
 import { delivaryoption as deliveryOptions, getdeliveryoption } from '../delivaryoption.js';
+import{renderpaymentsummary} from './paymentsummary.js';
 
 // ✅ Helper function
 function formatcurrency(priceCents) {
@@ -110,6 +111,7 @@ function addEventListeners() {
       const id = link.dataset.productId;
       removefromcart(id);
       renderordersummary(); // re-render after deletion
+      renderpaymentsummary();
     });
   });
 
@@ -119,6 +121,7 @@ function addEventListeners() {
       const { productId, deliveryOptionId } = element.dataset;
       updatedelivaryoption(productId, deliveryOptionId);
       renderordersummary(); // re-render after changing delivery option
+      renderpaymentsummary();
     });
   });
 }
